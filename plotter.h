@@ -15,6 +15,8 @@ class Plotter : public QWidget
 
     QPixmap paintBuffer;
 
+    void drawGrid();
+
 public:
     explicit Plotter(QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);

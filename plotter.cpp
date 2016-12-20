@@ -1,7 +1,12 @@
 #include "plotter.h"
 #define LEGEND_WIDTH 10
 #define GRID_STEP 10
+#define MARGIN_LEFT 10
+#define MARGIN_RIGHT 10
+#define MARGIN_TOP 10
+#define MARGIN_BOTTOM 10
 #include "stdio.h"
+#include "iostream"
 
 Plotter::Plotter(QWidget *parent) :
     QWidget(parent),
@@ -15,48 +20,60 @@ double Plotter::mm2px(double mm) {
 
 void Plotter::paintEvent(QPaintEvent *event)
 {
-    paintBuffer.fill(Qt::white);
+    drawGrid();
+    drawGrid();
+}
+
+void Plotter::drawGrid() {
     QPainter painter(this);
+    paintBuffer.fill(Qt::white);
     painter.drawPixmap(0, 0, this->width(), this->height(), paintBuffer);
     painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap));
-    int mm = LEGEND_WIDTH;
-    int offset = mm2px(mm);
-    painter.drawLine(offset, 0, offset, height());
-    painter.drawLine(offset, 0, offset - 5, 20);
-    painter.drawLine(offset, 0, offset + 5, 20);
 
-    painter.drawLine(0, height() - offset, width(), height() - offset);
-    painter.drawLine(width(), height() - offset, width() - 20, height() - offset + 5);
-    painter.drawLine(width(), height() - offset, width() - 20, height() - offset - 5);
+    //Вертикальные границы
+    painter.drawLine(mm2px(MARGIN_LEFT), mm2px(MARGIN_TOP), mm2px(MARGIN_LEFT), height() - mm2px(MARGIN_BOTTOM));
+    painter.drawLine(width() - mm2px(MARGIN_RIGHT), mm2px(MARGIN_TOP), width() - mm2px(MARGIN_RIGHT), height() - mm2px(MARGIN_BOTTOM));
+    //Горизонтальные границы
+    painter.drawLine(mm2px(MARGIN_LEFT), mm2px(MARGIN_TOP), width() - mm2px(MARGIN_RIGHT), mm2px(MARGIN_TOP));
+    painter.drawLine(mm2px(MARGIN_LEFT), height() - mm2px(MARGIN_BOTTOM), width() - mm2px(MARGIN_RIGHT), height() - mm2px(MARGIN_BOTTOM));
 
+    //Задаём цвет второстепернных линий
     painter.setPen(QPen(QColor(170, 170, 170), 1, Qt::DashLine, Qt::FlatCap));
-    int xSteps = 0;
-    offset = mm2px(mm += GRID_STEP);
-    while (offset < height()) {
 
-        painter.drawLine(mm2px(LEGEND_WIDTH - 2), height() - offset, width(), height() - offset);
-        offset = mm2px(mm += GRID_STEP);
-    }
-    offset = mm2px(mm = LEGEND_WIDTH + GRID_STEP);
-    while (offset < width()) {
-        xSteps++;
-        painter.drawLine(offset, 0, offset, height() - mm2px(LEGEND_WIDTH - 2));
-        offset = mm2px(mm += GRID_STEP);
-    }
+    xMax = 10; yMax = 20; xMin = 0; yMin = -5;
 
-    xMin = 0;
-    xMax = 10;
-    double xStep = (xMax - xMin) / xSteps;
-    double xTemp = xMin;
-    offset = mm2px(mm = LEGEND_WIDTH + GRID_STEP);
-    while (offset < width()) {
-        char str[24];
-        xTemp += xStep;
-        sprintf(str, "%2.2f", xTemp);
-        painter.drawText(offset - mm2px(GRID_STEP) / 2, height() - mm2px(LEGEND_WIDTH - 2), mm2px(GRID_STEP), mm2px(LEGEND_WIDTH - 2), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+    int graphWidth = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
+    int xSteps = graphWidth / mm2px(GRID_STEP);
+    double xStep = (xMax - xMin) / graphWidth * mm2px(GRID_STEP);
+    int graphHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
+    int ySteps = graphHeight / mm2px(GRID_STEP);
+    double yStep = (yMax - yMin) / graphHeight * mm2px(GRID_STEP);
+
+    char str[24];
+    int offset;
+
+    //Горизонтальные второстепенные линии и вертикальная легенда
+    int mm = MARGIN_BOTTOM;
+    offset = mm2px(mm);
+    sprintf(str, "%2.2f", yMin);
+    painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP + MARGIN_BOTTOM) / 2, Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+    for (int i = 0; i < ySteps;) {
         offset = mm2px(mm += GRID_STEP);
+        painter.drawLine(mm2px(MARGIN_LEFT), height() - offset, width() - mm2px(MARGIN_RIGHT), height() - offset);
+        sprintf(str, "%2.2f", yMin + ++i * yStep);
+        painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
     }
 
-
+    //Вертикальные второстепенные линии и горизонтальная легенда
+    mm = MARGIN_LEFT;
+    offset = mm2px(mm);
+    sprintf(str, "%2.2f", xMin);
+    painter.drawText(offset / 2, height() - mm2px(MARGIN_BOTTOM), mm2px(GRID_STEP + MARGIN_LEFT) / 2, mm2px(MARGIN_BOTTOM), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+    for (int i = 0; i < xSteps;) {
+        offset = mm2px(mm += GRID_STEP);
+        painter.drawLine(offset, mm2px(MARGIN_TOP), offset, height() - mm2px(MARGIN_BOTTOM));
+        sprintf(str, "%2.2f", xMin + ++i * xStep);
+        painter.drawText(offset - mm2px(GRID_STEP) / 2, height() - mm2px(MARGIN_BOTTOM), mm2px(GRID_STEP), mm2px(MARGIN_BOTTOM), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+    }
     painter.end();
 }
