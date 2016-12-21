@@ -19,11 +19,12 @@ class Plotter : public QWidget
     QPixmap paintBuffer;
 
     void drawGrid();
+    void drawGraphs();
 
 public:
     explicit Plotter(QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
-    void addGraph(DataGraph graph);
+    void addGraph(DataGraph *graph);
 signals:
 
 public slots:

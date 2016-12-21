@@ -1,8 +1,8 @@
 #include "plotter.h"
 #define LEGEND_WIDTH 10
 #define GRID_STEP 10
-#define MARGIN_LEFT 10
-#define MARGIN_RIGHT 10
+#define MARGIN_LEFT 15
+#define MARGIN_RIGHT 5
 #define MARGIN_TOP 10
 #define MARGIN_BOTTOM 10
 #include "stdio.h"
@@ -21,6 +21,7 @@ double Plotter::mm2px(double mm) {
 void Plotter::paintEvent(QPaintEvent *event)
 {
     drawGrid();
+    drawGraphs();
 }
 
 void Plotter::drawGrid() {
@@ -39,7 +40,7 @@ void Plotter::drawGrid() {
     //Задаём цвет второстепернных линий
     painter.setPen(QPen(QColor(170, 170, 170), 1, Qt::DashLine, Qt::FlatCap));
 
-    xMax = 10; yMax = 20; xMin = 0; yMin = -5;
+    xMax = 11; yMax = -450; xMin = 1; yMin = -2200;
 
     int graphWidth = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
     int xSteps = graphWidth / mm2px(GRID_STEP);
@@ -77,6 +78,66 @@ void Plotter::drawGrid() {
     painter.end();
 }
 
-void Plotter::addGraph(DataGraph graph) {
-    graphs.push_back(graph);
+void Plotter::drawGraphs() {
+    QPainter painter(this);
+    painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap));
+
+    for(int i = 0; i < graphs.size(); i++) {
+        DataGraph tempGraph = graphs[i];
+
+        //Ищем левую границу
+        double koef = (xMin - tempGraph.getKeys()[0]) / (tempGraph.getKeys()[tempGraph.getKeys().size() - 1] - tempGraph.getKeys()[0]);
+        int xLeft;
+        if(koef < 0) { xLeft = 0; } else {
+            if(koef > 1) { continue; } else {
+                xLeft = tempGraph.getKeys().size() * koef;
+                while(tempGraph.getKeys()[xLeft] < xMin)
+                    xLeft++;
+                while(tempGraph.getKeys()[xLeft - 1] > xMin)
+                    xLeft--;
+            }
+        }
+
+        std::cerr << koef << " " << xLeft << " " << tempGraph.getKeys()[xLeft] << tempGraph.getValues()[xLeft] << "\n";
+
+        //Ищем правую границу
+        koef = (xMax - tempGraph.getKeys()[0]) / (tempGraph.getKeys()[tempGraph.getKeys().size() - 1] - tempGraph.getKeys()[0]);
+        int xRight;
+        if(koef < 0) { continue; } else {
+            if(koef > 1) { xRight = tempGraph.getKeys().size() - 1; } else {
+                xRight = tempGraph.getKeys().size() * koef;
+                while(tempGraph.getKeys()[xRight] > xMax)
+                    xRight--;
+                while(tempGraph.getKeys()[xRight + 1] < xMax)
+                    xRight++;
+            }
+        }
+
+        std::cerr << koef << " " << xRight << " " << tempGraph.getKeys()[xRight] << tempGraph.getValues()[xRight] << "\n";
+
+        int pxLeft = mm2px(MARGIN_LEFT);
+        int pxWidth = width() - mm2px(MARGIN_RIGHT + MARGIN_LEFT);
+        int pxBottom = height() - mm2px(MARGIN_BOTTOM);
+        int pxHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
+
+        double oneXWeigth;
+        int backX = (tempGraph.getKeys()[xLeft] - xMin) / (xMax - xMin) * pxWidth + pxLeft;
+        int backY = pxBottom - (tempGraph.getValues()[xLeft] - yMin) / (yMax - yMin) * pxHeight;
+        for(int j = xLeft + 1; j <= xRight; j++) {
+            int X = (tempGraph.getKeys()[j] - xMin) / (xMax - xMin) * pxWidth + pxLeft;
+            int Y = pxBottom - (tempGraph.getValues()[j] - yMin) / (yMax - yMin) * pxHeight;
+            painter.drawLine(backX, backY, X, Y);
+            backX = X;
+            backY = Y;
+        }
+
+
+    }
+
+
+    painter.end();
+}
+
+void Plotter::addGraph(DataGraph *graph) {
+    graphs.push_back(*graph);
 }
