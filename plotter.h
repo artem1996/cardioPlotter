@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QPainter>
+#include <QVector>
+#include <datagraph.h>
 
 class Plotter : public QWidget
 {
@@ -12,6 +14,7 @@ class Plotter : public QWidget
     double dp2px();
     double mm2px(double mm);
     double yMin, yMax, xMin, xMax;
+    QVector<DataGraph> graphs;
 
     QPixmap paintBuffer;
 
@@ -20,7 +23,7 @@ class Plotter : public QWidget
 public:
     explicit Plotter(QWidget *parent = 0);
     void paintEvent(QPaintEvent *event);
-
+    void addGraph(DataGraph graph);
 signals:
 
 public slots:

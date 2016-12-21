@@ -25,9 +25,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    plotter.cpp
+    plotter.cpp \
+    datagraph.cpp
 
 HEADERS  += mainwindow.h \
-    plotter.h
+    plotter.h \
+    datagraph.h
 
 FORMS    += mainwindow.ui

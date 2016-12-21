@@ -21,7 +21,6 @@ double Plotter::mm2px(double mm) {
 void Plotter::paintEvent(QPaintEvent *event)
 {
     drawGrid();
-    drawGrid();
 }
 
 void Plotter::drawGrid() {
@@ -76,4 +75,8 @@ void Plotter::drawGrid() {
         painter.drawText(offset - mm2px(GRID_STEP) / 2, height() - mm2px(MARGIN_BOTTOM), mm2px(GRID_STEP), mm2px(MARGIN_BOTTOM), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
     }
     painter.end();
+}
+
+void Plotter::addGraph(DataGraph graph) {
+    graphs.push_back(graph);
 }
