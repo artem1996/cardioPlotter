@@ -7,11 +7,15 @@
 #define MARGIN_BOTTOM 10
 #include "stdio.h"
 #include "iostream"
+#include <QMouseEvent>
+#include <cmath>
+#include <QWheelEvent>
 
 Plotter::Plotter(QWidget *parent) :
     QWidget(parent),
     paintBuffer(size())
 {
+    xMax = 11; yMax = 100; xMin = 1; yMin = -100;
 }
 
 double Plotter::mm2px(double mm) {
@@ -39,8 +43,6 @@ void Plotter::drawGrid() {
 
     //Задаём цвет второстепернных линий
     painter.setPen(QPen(QColor(170, 170, 170), 1, Qt::DashLine, Qt::FlatCap));
-
-    xMax = 11; yMax = -450; xMin = 1; yMin = -2200;
 
     int graphWidth = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
     int xSteps = graphWidth / mm2px(GRID_STEP);
@@ -140,4 +142,42 @@ void Plotter::drawGraphs() {
 
 void Plotter::addGraph(DataGraph *graph) {
     graphs.push_back(*graph);
+}
+
+void Plotter::mouseMoveEvent(QMouseEvent *event) {
+    static int i = 0;
+    if(fabs(oldX - event->x()) < mm2px(5)) return;
+    double cost = (xMax - xMin) / (width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT)) * (oldX - event->x());
+    xMax += cost;
+    xMin += cost;
+    repaint();
+    //std::cerr << event->x() << " " << event->y() << " " << i++ << "\n";
+    oldX = event->x();
+}
+
+void Plotter::mousePressEvent(QMouseEvent *event) {
+    oldX = event->x();
+    oldY = event->y();
+}
+
+void Plotter::wheelEvent(QWheelEvent *event) {
+    int numDegrees = event -> delta() / 8;
+    int numTicks = numDegrees / 15;
+    if(numTicks == 0) return;
+    int x = event->x();
+    int y = event->y();
+    if(x <= mm2px(MARGIN_LEFT + 1) || x >= width() - mm2px(MARGIN_RIGHT + 1) || y < mm2px(MARGIN_TOP + 1) || y > height() - mm2px(MARGIN_BOTTOM + 1))
+        return;
+    x -= mm2px(MARGIN_LEFT);
+    int widthGraph = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
+    double inc = (xMax - xMin) * 0.1 * numTicks;
+    if(numTicks < 0) { //+++
+        xMin -= inc * x / widthGraph;
+        xMax += inc * (widthGraph - x) / widthGraph;
+    } else { //---
+        xMin -= inc * x / widthGraph;
+        xMax += inc * (widthGraph - x) / widthGraph;
+    }
+
+    repaint();
 }

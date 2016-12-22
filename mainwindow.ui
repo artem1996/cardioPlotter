@@ -20,6 +20,9 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="mouseTracking">
+    <bool>true</bool>
+   </property>
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout"/>
