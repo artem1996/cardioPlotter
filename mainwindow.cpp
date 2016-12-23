@@ -7,8 +7,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     plotter = new Plotter();
+    ui->scale10->setChecked(true);
+    plotter->setScale(10);
     ui->gridLayout->addWidget(plotter, 0,0,1,1);
-    std::cout << plotter->width() << " " << plotter->height() << " " << plotter->physicalDpiY() << " " << plotter->logicalDpiY() << "\n";
+    //std::cout << plotter->width() << " " << plotter->height() << " " << plotter->physicalDpiY() << " " << plotter->logicalDpiY() << "\n";
 }
 
 MainWindow::~MainWindow()
@@ -25,3 +27,21 @@ void MainWindow::setData(int numb, int diskr, QVector<double> *vect) {
     repaint();
 }
 
+
+void MainWindow::on_scale10_clicked()
+{
+    plotter->setScale(10);
+    repaint();
+}
+
+void MainWindow::on_scale20_clicked()
+{
+    plotter->setScale(20);
+    repaint();
+}
+
+void MainWindow::on_scale30_clicked()
+{
+    plotter->setScale(30);
+    repaint();
+}

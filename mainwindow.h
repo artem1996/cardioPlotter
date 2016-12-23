@@ -20,6 +20,13 @@ public:
     ~MainWindow();
     void setData(int numb, int diskr, QVector<double> *vect);
 
+private slots:
+    void on_scale10_clicked();
+
+    void on_scale20_clicked();
+
+    void on_scale30_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

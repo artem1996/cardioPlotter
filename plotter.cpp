@@ -15,7 +15,6 @@ Plotter::Plotter(QWidget *parent) :
     QWidget(parent),
     paintBuffer(size())
 {
-    xMax = 11; yMax = 100; xMin = 1; yMin = -100;
 }
 
 double Plotter::mm2px(double mm) {
@@ -45,10 +44,11 @@ void Plotter::drawGrid() {
     painter.setPen(QPen(QColor(170, 170, 170), 1, Qt::DashLine, Qt::FlatCap));
 
     int graphWidth = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
-    int xSteps = graphWidth / mm2px(GRID_STEP);
-    double xStep = (xMax - xMin) / graphWidth * mm2px(GRID_STEP);
     int graphHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
+    int xSteps = graphWidth / mm2px(GRID_STEP);
     int ySteps = graphHeight / mm2px(GRID_STEP);
+    yMax = (double) graphHeight / mm2px(GRID_STEP) * scale + yMin;
+    double xStep = (xMax - xMin) / graphWidth * mm2px(GRID_STEP);
     double yStep = (yMax - yMin) / graphHeight * mm2px(GRID_STEP);
 
     char str[24];
@@ -69,7 +69,7 @@ void Plotter::drawGrid() {
     //Вертикальные второстепенные линии и горизонтальная легенда
     mm = MARGIN_LEFT;
     offset = mm2px(mm);
-    sprintf(str, "%2.2f", xMin);
+    sprintf(str, "%4.2f", xMin);
     painter.drawText(offset / 2, height() - mm2px(MARGIN_BOTTOM), mm2px(GRID_STEP + MARGIN_LEFT) / 2, mm2px(MARGIN_BOTTOM), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
     for (int i = 0; i < xSteps;) {
         offset = mm2px(mm += GRID_STEP);
@@ -93,29 +93,29 @@ void Plotter::drawGraphs() {
         if(koef < 0) { xLeft = 0; } else {
             if(koef > 1) { continue; } else {
                 xLeft = tempGraph.getKeys().size() * koef;
-                while(tempGraph.getKeys()[xLeft] < xMin)
+                while(xLeft < tempGraph.getKeys().size() - 1 && tempGraph.getKeys()[xLeft] < xMin)
                     xLeft++;
-                while(tempGraph.getKeys()[xLeft - 1] > xMin)
+                while(xLeft > 0 && tempGraph.getKeys()[xLeft - 1] > xMin)
                     xLeft--;
             }
         }
 
-        std::cerr << koef << " " << xLeft << " " << tempGraph.getKeys()[xLeft] << tempGraph.getValues()[xLeft] << "\n";
+        //std::cerr << koef << " " << xLeft << " " << tempGraph.getKeys()[xLeft] << tempGraph.getValues()[xLeft] << "\n";
 
         //Ищем правую границу
         koef = (xMax - tempGraph.getKeys()[0]) / (tempGraph.getKeys()[tempGraph.getKeys().size() - 1] - tempGraph.getKeys()[0]);
         int xRight;
         if(koef < 0) { continue; } else {
             if(koef > 1) { xRight = tempGraph.getKeys().size() - 1; } else {
-                xRight = tempGraph.getKeys().size() * koef;
-                while(tempGraph.getKeys()[xRight] > xMax)
+                xRight = (tempGraph.getKeys().size() - 1) * koef;
+                while(xRight > 0 && tempGraph.getKeys()[xRight] > xMax)
                     xRight--;
-                while(tempGraph.getKeys()[xRight + 1] < xMax)
+                while(xRight < tempGraph.getKeys().size() - 1 && tempGraph.getKeys()[xRight + 1] < xMax)
                     xRight++;
             }
         }
 
-        std::cerr << koef << " " << xRight << " " << tempGraph.getKeys()[xRight] << tempGraph.getValues()[xRight] << "\n";
+        //std::cerr << koef << " " << xRight << " " << tempGraph.getKeys()[xRight] << tempGraph.getValues()[xRight] << "\n";
 
         int pxLeft = mm2px(MARGIN_LEFT);
         int pxWidth = width() - mm2px(MARGIN_RIGHT + MARGIN_LEFT);
@@ -142,10 +142,16 @@ void Plotter::drawGraphs() {
 
 void Plotter::addGraph(DataGraph *graph) {
     graphs.push_back(*graph);
+    for(int i = 0; i < graph->getKeys().size(); i++) {
+        if(graph->getValues()[i] < realYMin)
+            realYMin = graph->getValues()[i];
+    }
+    xMin = graph->getKeys()[0];
+    xMax = graph->getKeys()[graph->getKeys().size() - 1];
+    rescale();
 }
 
 void Plotter::mouseMoveEvent(QMouseEvent *event) {
-    static int i = 0;
     if(fabs(oldX - event->x()) < mm2px(5)) return;
     double cost = (xMax - xMin) / (width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT)) * (oldX - event->x());
     xMax += cost;
@@ -153,17 +159,29 @@ void Plotter::mouseMoveEvent(QMouseEvent *event) {
     repaint();
     //std::cerr << event->x() << " " << event->y() << " " << i++ << "\n";
     oldX = event->x();
+    isMove = true;
 }
 
 void Plotter::mousePressEvent(QMouseEvent *event) {
     oldX = event->x();
     oldY = event->y();
+    isMove = false;
+}
+
+void Plotter::mouseReleaseEvent(QMouseEvent *event) {
+    if(!isMove) {
+        isMove = false;
+        return;
+    }
+    //TODO: здесь должны быть точки... +/-
 }
 
 void Plotter::wheelEvent(QWheelEvent *event) {
     int numDegrees = event -> delta() / 8;
     int numTicks = numDegrees / 15;
     if(numTicks == 0) return;
+    if(numTicks > 5) numTicks = 5;
+    if(numTicks < -5) numTicks = -5;
     int x = event->x();
     int y = event->y();
     if(x <= mm2px(MARGIN_LEFT + 1) || x >= width() - mm2px(MARGIN_RIGHT + 1) || y < mm2px(MARGIN_TOP + 1) || y > height() - mm2px(MARGIN_BOTTOM + 1))
@@ -180,4 +198,15 @@ void Plotter::wheelEvent(QWheelEvent *event) {
     }
 
     repaint();
+}
+
+void Plotter::setScale(int scale) {
+    this->scale = scale;
+    rescale();
+}
+
+void Plotter::rescale() {
+    if(graphs.size() == 0)
+        return;
+    yMin = (((int)realYMin - 1) / (int) scale - ((((int)realYMin - 1) % (int) scale) ? 1 : 0)) * scale;
 }
