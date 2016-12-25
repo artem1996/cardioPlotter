@@ -48,6 +48,7 @@ void Plotter::drawGrid() {
     int xSteps = graphWidth / mm2px(GRID_STEP);
     int ySteps = graphHeight / mm2px(GRID_STEP);
     yMax = (double) graphHeight / mm2px(GRID_STEP) * scale + yMin;
+    xMax = (double) graphWidth / mm2px(GRID_STEP) * timeScale + xMin;
     double xStep = (xMax - xMin) / graphWidth * mm2px(GRID_STEP);
     double yStep = (yMax - yMin) / graphHeight * mm2px(GRID_STEP);
 
@@ -74,7 +75,7 @@ void Plotter::drawGrid() {
     for (int i = 0; i < xSteps;) {
         offset = mm2px(mm += GRID_STEP);
         painter.drawLine(offset, mm2px(MARGIN_TOP), offset, height() - mm2px(MARGIN_BOTTOM));
-        sprintf(str, "%2.2f", xMin + ++i * xStep);
+        sprintf(str, "%3.1f", xMin + ++i * xStep);
         painter.drawText(offset - mm2px(GRID_STEP) / 2, height() - mm2px(MARGIN_BOTTOM), mm2px(GRID_STEP), mm2px(MARGIN_BOTTOM), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
     }
     painter.end();
@@ -209,4 +210,9 @@ void Plotter::rescale() {
     if(graphs.size() == 0)
         return;
     yMin = (((int)realYMin - 1) / (int) scale - ((((int)realYMin - 1) % (int) scale) ? 1 : 0)) * scale;
+}
+
+void Plotter::setTimeScale(double scale) {
+    this->timeScale = scale;
+    rescale();
 }

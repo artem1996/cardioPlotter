@@ -27,6 +27,12 @@ private slots:
 
     void on_scale30_clicked();
 
+    void on_scaleTime1_clicked();
+
+    void on_scaleTime5_clicked();
+
+    void on_scaleTime10_clicked();
+
 private:
     Ui::MainWindow *ui;
 };

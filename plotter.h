@@ -16,6 +16,7 @@ class Plotter : public QWidget
     double yMin, yMax, xMin, xMax, realYMin = 99999;
     int oldX, oldY;
     double scale;
+    double timeScale;
     bool isMove = false;
     QVector<DataGraph> graphs;
 
@@ -34,6 +35,7 @@ public:
     void mouseReleaseEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *event);
     void setScale(int scale);
+    void setTimeScale(double scale);
 signals:
 
 public slots:
