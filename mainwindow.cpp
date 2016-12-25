@@ -20,12 +20,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setData(int numb, int diskr, QVector<double> *vect) {
+void MainWindow::setData(int numb, int diskr, QVector<double> *vect, QVector<int> *nodes) {
     QVector<double> aX;
     for(int i = 0; i < vect[0].size(); i++) {
         aX.push_back(i * (1.0 / diskr));
     }
-    plotter->addGraph(new DataGraph(aX, vect[0])); // Устанавливаем данные
+    plotter->addGraph(new DataGraph(aX, vect[0], nodes[0])); // Устанавливаем данные
     repaint();
 }
 
@@ -38,13 +38,13 @@ void MainWindow::on_scale10_clicked()
 
 void MainWindow::on_scale20_clicked()
 {
-    plotter->setScale(20);
+    plotter->setScale(30);
     repaint();
 }
 
 void MainWindow::on_scale30_clicked()
 {
-    plotter->setScale(30);
+    plotter->setScale(50);
     repaint();
 }
 

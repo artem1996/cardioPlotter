@@ -1,10 +1,11 @@
 #include "datagraph.h"
 
 DataGraph::DataGraph() {}
-DataGraph::DataGraph(QVector<double> &keys, QVector<double> &values)
+DataGraph::DataGraph(QVector<double> &keys, QVector<double> &values, QVector<int> &nodes)
 {
     this->keys = keys;
     this->values = values;
+    this->nodes = nodes;
 }
 
 void DataGraph::setKeys(QVector<double> &keys) {
@@ -21,4 +22,8 @@ QVector<double>& DataGraph::getKeys() {
 
 QVector<double>& DataGraph::getValues() {
     return this->values;
+}
+
+QVector<int>& DataGraph::getNodes() {
+    return this->nodes;
 }

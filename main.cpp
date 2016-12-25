@@ -2,41 +2,65 @@
 #include <QApplication>
 #include <iostream>
 #include <fstream>
+#define BUF_SIZE 32
+
+void getNotEmptyLine(std::ifstream& file, char* str) {
+    do {
+    file.getline(str, BUF_SIZE);
+    } while (str[0] == '\n' || str[0] == 0);
+}
+
 
 int main(int argc, char *argv[])
 {
     int graphCount = 0;
-    std::ifstream fil("/home/note/Diplom/cardioPlotter/ECG_4000.m", std::ios::in);
+    std::ifstream fil("/home/note/Diplom/cardioPlotter/Signal1_ECG.m", std::ios::in);
     if (!fil.is_open()) { // если файл не открыт
             std::cout << "404 Not Found!\n"; // сообщить об этом
             return -1;
     } else {
         std::cerr << "Otkryto!\n";
     }
-    char *lol = new char[32];
-    fil.getline(lol, 32);
+    char *lol = new char[BUF_SIZE];
+    getNotEmptyLine(fil, lol);
     graphCount = atoi(strstr(lol, "lead_num  =") + 11);
-    fil.getline(lol, 32);
+    getNotEmptyLine(fil, lol);
     int descr = atoi(strstr(lol, "samp_rate =") + 11);
-    fil.getline(lol, 32);
     QVector<double> gr[graphCount];
+    QVector<int> nodes[graphCount];
     for(int i = 0; i < graphCount; i++) {
-        fil.getline(lol, 32);
+        getNotEmptyLine(fil, lol);
+        //std::cerr << lol << std::endl;
         double temp;
-        fil >> temp;
-        gr[i].push_back(temp/10);
         while(fil >> temp) {
             gr[i].push_back(temp);
         }
         fil.clear(std::ios_base::goodbit );
-        fil.getline(lol, 32);
+        getNotEmptyLine(fil, lol);
     }
-    std::cout << graphCount << " " << descr << std::endl;
-    for(int i = 0; i < graphCount; i++)
-        std::cerr << gr[i].back() << std::endl;
+    fil.close();
+    std::ifstream nodesFile("/home/note/Diplom/cardioPlotter/Signal1_Rpeaks.m", std::ios::in);
+    if (!nodesFile.is_open()) { // если файл не открыт
+            std::cout << "404 Not Found!\n"; // сообщить об этом
+            return -1;
+    } else {
+        std::cerr << "Otkryto!\n";
+    }
+    for(int i = 0; i < graphCount; i++) {
+        getNotEmptyLine(nodesFile, lol);
+        int temp;
+        while(nodesFile >> temp) {
+            nodes[i].push_back(temp);
+        }
+        nodesFile.clear(std::ios_base::goodbit );
+        getNotEmptyLine(nodesFile, lol);
+    }
+//    std::cout << graphCount << " " << descr << std::endl;
+//    for(int i = 0; i < graphCount; i++)
+//        std::cerr << gr[i].back() << std::endl;
     QApplication a(argc, argv);
     MainWindow w;
-    w.setData(graphCount, descr, gr);
+    w.setData(graphCount, descr, gr, nodes);
     w.show();
 
     return a.exec();

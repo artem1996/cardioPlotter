@@ -70,7 +70,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>20мВ/см</string>
+        <string>30мВ/см</string>
        </property>
       </widget>
       <widget class="QRadioButton" name="scale30">
@@ -83,7 +83,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>30мВ/см</string>
+        <string>50мВ/см</string>
        </property>
       </widget>
      </widget>
