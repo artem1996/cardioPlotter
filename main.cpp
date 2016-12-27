@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     getNotEmptyLine(fil, lol);
     int descr = atoi(strstr(lol, "samp_rate =") + 11);
     QVector<double> gr[graphCount];
-    QVector<int> nodes[graphCount];
+    QVector<int> nodes;
     for(int i = 0; i < graphCount; i++) {
         getNotEmptyLine(fil, lol);
         //std::cerr << lol << std::endl;
@@ -46,15 +46,14 @@ int main(int argc, char *argv[])
     } else {
         std::cerr << "Otkryto!\n";
     }
-    for(int i = 0; i < graphCount; i++) {
-        getNotEmptyLine(nodesFile, lol);
-        int temp;
-        while(nodesFile >> temp) {
-            nodes[i].push_back(temp);
-        }
-        nodesFile.clear(std::ios_base::goodbit );
-        getNotEmptyLine(nodesFile, lol);
+    getNotEmptyLine(nodesFile, lol);
+    int temp;
+    while(nodesFile >> temp) {
+        nodes.push_back(temp);
     }
+    nodesFile.clear(std::ios_base::goodbit );
+    getNotEmptyLine(nodesFile, lol);
+    nodesFile.close();
 //    std::cout << graphCount << " " << descr << std::endl;
 //    for(int i = 0; i < graphCount; i++)
 //        std::cerr << gr[i].back() << std::endl;

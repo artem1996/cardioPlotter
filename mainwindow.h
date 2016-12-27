@@ -18,7 +18,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void setData(int numb, int diskr, QVector<double> *vect, QVector<int> *nodes);
+    void setData(int numb, int diskr, QVector<double> *vect, QVector<int> &nodes);
 
 private slots:
     void on_scale10_clicked();

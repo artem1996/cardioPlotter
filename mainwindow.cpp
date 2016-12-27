@@ -20,12 +20,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::setData(int numb, int diskr, QVector<double> *vect, QVector<int> *nodes) {
-    QVector<double> aX;
-    for(int i = 0; i < vect[0].size(); i++) {
-        aX.push_back(i * (1.0 / diskr));
+void MainWindow::setData(int numb, int diskr, QVector<double> *vect, QVector<int> &nodes) {
+    for(int i = 0; i < numb; i++) {
+        plotter->addGraph(new DataGraph(vect[i])); // Устанавливаем данные
     }
-    plotter->addGraph(new DataGraph(aX, vect[0], nodes[0])); // Устанавливаем данные
+    plotter->setFrequency(diskr);
+    plotter->setNodes(nodes);
     repaint();
 }
 

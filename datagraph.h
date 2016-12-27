@@ -4,17 +4,16 @@
 
 class DataGraph
 {
-    QVector<double> keys;
     QVector<double> values;
-    QVector<int> nodes;
+    double min;
+    double max;
 public:
     DataGraph();
-    DataGraph(QVector<double> &keys, QVector<double> &values, QVector<int> &nodes);
-    void setKeys(QVector<double> &keys);
+    DataGraph(QVector<double> &values);
     void setValues(QVector<double> &values);
-    QVector<double>& getKeys();
+    double getMin();
     QVector<double>& getValues();
-    QVector<int>& getNodes();
+    double getMax();
 };
 
 #endif // DATAGRAPH_H

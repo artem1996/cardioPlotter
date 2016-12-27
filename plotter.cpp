@@ -1,7 +1,7 @@
 #include "plotter.h"
 #define LEGEND_WIDTH 10
 #define GRID_STEP 10
-#define MARGIN_LEFT 15
+#define MARGIN_LEFT 5
 #define MARGIN_RIGHT 5
 #define MARGIN_TOP 10
 #define MARGIN_BOTTOM 10
@@ -47,10 +47,8 @@ void Plotter::drawGrid() {
     int graphHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
     int xSteps = graphWidth / mm2px(GRID_STEP);
     int ySteps = graphHeight / mm2px(GRID_STEP);
-    yMax = (double) graphHeight / mm2px(GRID_STEP) * scale + yMin;
     xMax = (double) graphWidth / mm2px(GRID_STEP) * timeScale + xMin;
     double xStep = (xMax - xMin) / graphWidth * mm2px(GRID_STEP);
-    double yStep = (yMax - yMin) / graphHeight * mm2px(GRID_STEP);
 
     char str[24];
     int offset;
@@ -58,13 +56,13 @@ void Plotter::drawGrid() {
     //Горизонтальные второстепенные линии и вертикальная легенда
     int mm = MARGIN_BOTTOM;
     offset = mm2px(mm);
-    sprintf(str, "%2.2f", yMin);
-    painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP + MARGIN_BOTTOM) / 2, Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
-    for (int i = 0; i < ySteps;) {
+    //sprintf(str, "%2.2f", yMin);
+    //painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP + MARGIN_BOTTOM) / 2, Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+    for (int i = 0; i < ySteps; i++) {
         offset = mm2px(mm += GRID_STEP);
         painter.drawLine(mm2px(MARGIN_LEFT), height() - offset, width() - mm2px(MARGIN_RIGHT), height() - offset);
-        sprintf(str, "%2.2f", yMin + ++i * yStep);
-        painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
+        //sprintf(str, "%2.2f", yMin + ++i * yStep);
+        //painter.drawText(0, height() - offset - mm2px(GRID_STEP) / 2, mm2px(MARGIN_LEFT), mm2px(GRID_STEP), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
     }
 
     //Вертикальные второстепенные линии и горизонтальная легенда
@@ -85,104 +83,92 @@ void Plotter::drawGraphs() {
     QPainter painter(this);
     painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap));
 
+    //Ищем левую границу
+    double koef = (xMin - xValues[0]) / (xValues[xValues.size() - 1] - xValues[0]);
+    int xLeft;
+    if(koef < 0) { xLeft = 0; } else {
+        if(koef <= 1) {
+            xLeft = xValues.size() * koef;
+            while(xLeft < xValues.size() - 1 && xValues[xLeft] < xMin)
+                xLeft++;
+            while(xLeft > 0 && xValues[xLeft - 1] > xMin)
+                xLeft--;
+        }
+    }
+
+    //std::cerr << koef << " " << xLeft << " " << xValues[xLeft] << tempGraph.getValues()[xLeft] << "\n";
+
+    //Ищем правую границу
+    koef = (xMax - xValues[0]) / (xValues[xValues.size() - 1] - xValues[0]);
+    int xRight;
+    if(koef >= 0) {
+        if(koef > 1) { xRight = xValues.size() - 1; } else {
+            xRight = (xValues.size() - 1) * koef;
+            while(xRight > 0 && xValues[xRight] > xMax)
+                xRight--;
+            while(xRight < xValues.size() - 1 && xValues[xRight + 1] < xMax)
+                xRight++;
+        }
+    }
+
+    int pxLeft = mm2px(MARGIN_LEFT);
+    int pxWidth = width() - mm2px(MARGIN_RIGHT + MARGIN_LEFT);
+    int pxBottom = height() - mm2px(MARGIN_BOTTOM);
+    int pxTop = mm2px(MARGIN_TOP);
+    int pxHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
+    int startNode;
+    for(startNode = 0; startNode < nodes.size() && nodes[startNode] < xLeft + 1; startNode++);
+    double ratioX = pxWidth / (xMax - xMin);
+    double ratioY = mm2px(GRID_STEP) / scale;
+
     for(int i = 0; i < graphs.size(); i++) {
-        DataGraph tempGraph = graphs[i];
+        painter.setPen(QPen(QColor(i % 3 == 0 ? 255 - i / 3 * 50 : 0,i % 3 == 1 ? 255 - i / 3 * 50 : 0,i % 3 == 2 ? 255 - i / 3 * 50 : 0))); // Устанавливаем цвет графика
+        QVector<double> tempGraph = graphs[i].getValues();
+        int nullPoint = pxBottom - (double) pxHeight / (graphs.size()) * (i + 0.5);
+        double middleLine = (graphs[i].getMax() + graphs[i].getMin()) / 2;
 
-        //Ищем левую границу
-        double koef = (xMin - tempGraph.getKeys()[0]) / (tempGraph.getKeys()[tempGraph.getKeys().size() - 1] - tempGraph.getKeys()[0]);
-        int xLeft;
-        if(koef < 0) { xLeft = 0; } else {
-            if(koef > 1) { continue; } else {
-                xLeft = tempGraph.getKeys().size() * koef;
-                while(xLeft < tempGraph.getKeys().size() - 1 && tempGraph.getKeys()[xLeft] < xMin)
-                    xLeft++;
-                while(xLeft > 0 && tempGraph.getKeys()[xLeft - 1] > xMin)
-                    xLeft--;
-            }
-        }
+        //std::cerr << graphs[i].getMax() << " " << graphs[i].getMin() << "\n";// << xValues[xRight] << tempGraph.getValues()[xRight] << "\n";
 
-        //std::cerr << koef << " " << xLeft << " " << tempGraph.getKeys()[xLeft] << tempGraph.getValues()[xLeft] << "\n";
+        int backX = ratioX * (xValues[xLeft] - xMin) + pxLeft;
+        int backY = nullPoint - ratioY * (tempGraph[xLeft] - middleLine);
 
-        //Ищем правую границу
-        koef = (xMax - tempGraph.getKeys()[0]) / (tempGraph.getKeys()[tempGraph.getKeys().size() - 1] - tempGraph.getKeys()[0]);
-        int xRight;
-        if(koef < 0) { continue; } else {
-            if(koef > 1) { xRight = tempGraph.getKeys().size() - 1; } else {
-                xRight = (tempGraph.getKeys().size() - 1) * koef;
-                while(xRight > 0 && tempGraph.getKeys()[xRight] > xMax)
-                    xRight--;
-                while(xRight < tempGraph.getKeys().size() - 1 && tempGraph.getKeys()[xRight + 1] < xMax)
-                    xRight++;
-            }
-        }
-
-        //std::cerr << koef << " " << xRight << " " << tempGraph.getKeys()[xRight] << tempGraph.getValues()[xRight] << "\n";
-
-        int pxLeft = mm2px(MARGIN_LEFT);
-        int pxWidth = width() - mm2px(MARGIN_RIGHT + MARGIN_LEFT);
-        int pxBottom = height() - mm2px(MARGIN_BOTTOM);
-        int pxHeight = height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM);
-
-        double oneXWeigth;
-        int backX = (tempGraph.getKeys()[xLeft] - xMin) / (xMax - xMin) * pxWidth + pxLeft;
-        int backY = pxBottom - (tempGraph.getValues()[xLeft] - yMin) / (yMax - yMin) * pxHeight;
-
-        int node;
+        int node = startNode;
         int nodeR = mm2px(3) / 2;
-        for(node = 0; node < tempGraph.getNodes().size() && tempGraph.getNodes()[node] < xLeft + 1; node++);
         for(int j = xLeft + 1; j <= xRight; j++) {
-            int X = (tempGraph.getKeys()[j] - xMin) / (xMax - xMin) * pxWidth + pxLeft;
-            int Y = pxBottom - (tempGraph.getValues()[j] - yMin) / (yMax - yMin) * pxHeight;
-            painter.drawLine(backX, backY, X, Y);
-            if(node < tempGraph.getNodes().size() && tempGraph.getNodes()[node] == j) {
+            int X = ratioX * (xValues[j] - xMin) + pxLeft;
+            int Y = nullPoint - ratioY * (tempGraph[j] - middleLine);
+            if(Y < pxBottom && Y > pxTop) painter.drawLine(backX, backY, X, Y); else continue;
+            if(node < nodes.size() && nodes[node] == j) {
                 painter.drawArc(X - nodeR, Y - nodeR , nodeR*2, nodeR*2, 0, 5760);
-                char str[24] = "SMTH\0";
-                painter.drawText(X - mm2px(5), Y - mm2px(5), mm2px(10), mm2px(5), Qt::AlignHCenter | Qt::AlignVCenter, QString(str));
                 node++;
             }
             backX = X;
             backY = Y;
         }
-
-
     }
-
-
+    painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::FlatCap));
+    for(; startNode < nodes.size() && nodes[startNode] < xRight; startNode++) {
+        int X = ratioX * (xValues[nodes[startNode]] - xMin) + pxLeft;
+        painter.drawText(X - mm2px(5), 0, mm2px(10), mm2px(MARGIN_TOP), Qt::AlignHCenter | Qt::AlignVCenter, QString("SMTH\0"));
+    }
     painter.end();
 }
 
 void Plotter::addGraph(DataGraph *graph) {
     graphs.push_back(*graph);
-    for(int i = 0; i < graph->getKeys().size(); i++) {
-        if(graph->getValues()[i] < realYMin)
-            realYMin = graph->getValues()[i];
-    }
-    xMin = graph->getKeys()[0];
-    xMax = graph->getKeys()[graph->getKeys().size() - 1];
-    rescale();
 }
 
 void Plotter::mouseMoveEvent(QMouseEvent *event) {
-    if(fabs(oldY - event->y()) < mm2px(5) && fabs(oldX - event->x()) < mm2px(5)) return;
-    if(fabs(oldX - event->x()) > mm2px(5)) {
-        double cost = (xMax - xMin) / (width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT)) * (oldX - event->x());
-        xMin += cost;
-        //std::cerr << event->x() << " " << event->y() << " " << i++ << "\n";
-        oldX = event->x();
-    }
-    if(fabs(oldY - event->y()) > mm2px(5)) {
-        double cost = (yMax - yMin) / (height() - mm2px(MARGIN_TOP + MARGIN_BOTTOM)) * (oldY - event->y());
-        yMin -= cost;
-        oldY = event->y();
-    }
+    if(fabs(oldX - event->x()) < mm2px(5)) return;
+    double cost = (xMax - xMin) / (width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT)) * (oldX - event->x());
+    xMin += cost;
+    oldX = event->x();
     repaint();
     isMove = true;
-    std::cerr << "move\n";
 }
 
 void Plotter::mousePressEvent(QMouseEvent *event) {
     oldX = event->x();
-    oldY = event->y();
     isMove = false;
 }
 
@@ -193,62 +179,44 @@ void Plotter::mouseReleaseEvent(QMouseEvent *event) {
     }
     int X = event->x() - mm2px(MARGIN_LEFT);
     double position = (double) X / mm2px(GRID_STEP) * timeScale + xMin;
-    int xPoint = position / (graphs[0].getKeys()[1] - graphs[0].getKeys()[0]);
+    int xPoint = position / (xValues[1] - xValues[0]);
     std::cerr << "xPoint:  " << xPoint << "\n";
     int node;
-    for(node = 0; node < graphs[0].getNodes().size() && graphs[0].getNodes()[node] < xPoint; node++);
-    if(node >= graphs[0].getNodes().size()) node = graphs[0].getNodes().size() - 1;
+    for(node = 0; node < nodes.size() && nodes[node] < xPoint; node++);
+    if(node >= nodes.size()) node = nodes.size() - 1;
     if (event->button() == Qt::LeftButton) {
-        graphs[0].getNodes().insert(node, xPoint);
+        nodes.insert(node, xPoint);
     } else if(event->button() == Qt::RightButton) {
-        int diap = (double) mm2px(2) / mm2px(GRID_STEP) * timeScale / (graphs[0].getKeys()[1] - graphs[0].getKeys()[0]);
-        std::cerr << node << " " << diap << "\n";
-        if(node > 0 && xPoint - graphs[0].getNodes()[node - 1] < graphs[0].getNodes()[node] - xPoint) {
+        int diap = (double) mm2px(2) / mm2px(GRID_STEP) * timeScale / (xValues[1] - xValues[0]);
+        //std::cerr << node << " " << diap << "\n";
+        if(node > 0 && xPoint - nodes[node - 1] < nodes[node] - xPoint) {
             node -= 1;
         }
-        if(abs(xPoint - graphs[0].getNodes()[node]) < diap) {
-            graphs[0].getNodes().removeAt(node);
+        if(abs(xPoint - nodes[node]) < diap) {
+            nodes.removeAt(node);
         }
     }
     repaint();
 }
 
-void Plotter::wheelEvent(QWheelEvent *event) {
-//    int numDegrees = event -> delta() / 8;
-//    int numTicks = numDegrees / 15;
-//    if(numTicks == 0) return;
-//    if(numTicks > 5) numTicks = 5;
-//    if(numTicks < -5) numTicks = -5;
-//    int x = event->x();
-//    int y = event->y();
-//    if(x <= mm2px(MARGIN_LEFT + 1) || x >= width() - mm2px(MARGIN_RIGHT + 1) || y < mm2px(MARGIN_TOP + 1) || y > height() - mm2px(MARGIN_BOTTOM + 1))
-//        return;
-//    x -= mm2px(MARGIN_LEFT);
-//    int widthGraph = width() - mm2px(MARGIN_LEFT + MARGIN_RIGHT);
-//    double inc = (xMax - xMin) * 0.1 * numTicks;
-//    if(numTicks < 0) { //+++
-//        xMin -= inc * x / widthGraph;
-//        xMax += inc * (widthGraph - x) / widthGraph;
-//    } else { //---
-//        xMin -= inc * x / widthGraph;
-//        xMax += inc * (widthGraph - x) / widthGraph;
-//    }
-
-//    repaint();
-}
-
 void Plotter::setScale(int scale) {
     this->scale = scale;
-    rescale();
-}
-
-void Plotter::rescale() {
-    if(graphs.size() == 0)
-        return;
-    yMin = (((int)realYMin - 1) / (int) scale - ((((int)realYMin - 1) % (int) scale) ? 1 : 0)) * scale;
 }
 
 void Plotter::setTimeScale(double scale) {
     this->timeScale = scale;
-    rescale();
+}
+
+void Plotter::setFrequency(int frequency) {
+    xValues.clear();
+    this->frequency = frequency;
+    if(graphs.size() == 0) return;
+    double timeStep = 1.0 / frequency;
+    double length = graphs[0].getValues().size() * timeStep;
+    for(double i = 0; i < length; i += timeStep)
+        xValues.push_back(i);
+}
+
+void Plotter::setNodes(QVector<int> &nodes) {
+    this->nodes = nodes;
 }
