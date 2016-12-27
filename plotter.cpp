@@ -126,6 +126,7 @@ void Plotter::drawGraphs() {
         QVector<double> tempGraph = graphs[i].getValues();
         int nullPoint = pxBottom - (double) pxHeight / (graphs.size()) * (i + 0.5);
         double middleLine = (graphs[i].getMax() + graphs[i].getMin()) / 2;
+        painter.drawText(0, nullPoint, mm2px(MARGIN_LEFT), mm2px(GRID_STEP), Qt::AlignHCenter | Qt::AlignVCenter, QString::number(i + 1));
 
         //std::cerr << graphs[i].getMax() << " " << graphs[i].getMin() << "\n";// << xValues[xRight] << tempGraph.getValues()[xRight] << "\n";
 
