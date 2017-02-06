@@ -124,7 +124,7 @@ void Plotter::drawGraphs() {
     for(int i = 0; i < graphs.size(); i++) {
         painter.setPen(QPen(QColor(i % 3 == 0 ? 255 - i / 3 * 50 : 0,i % 3 == 1 ? 255 - i / 3 * 50 : 0,i % 3 == 2 ? 255 - i / 3 * 50 : 0))); // Устанавливаем цвет графика
         QVector<double> tempGraph = graphs[i].getValues();
-        int nullPoint = pxBottom - (double) pxHeight / (graphs.size()) * (i + 0.5);
+        int nullPoint = pxBottom - (double) pxHeight / graphs.size() * (i + 0.5);
         double middleLine = (graphs[i].getMax() + graphs[i].getMin()) / 2;
         painter.drawText(0, nullPoint, mm2px(MARGIN_LEFT), mm2px(GRID_STEP), Qt::AlignHCenter | Qt::AlignVCenter, QString::number(i + 1));
 
